@@ -1,0 +1,18 @@
+spring:
+    profiles:
+        active: dev
+    application:
+        name: book-network-backend
+    servlet:
+        multipart:
+            max-file-size: 50MB
+    data:
+        rest:
+            default-media-type: application/json
+
+server:
+    servlet:
+        context-path: /api/v1
+
+skip-filter-url: >
+    /public/**
