@@ -1,12 +1,15 @@
 package com.xvn.book.auth;
 
 import com.xvn.book.email.EmailService;
+import com.xvn.book.email.EmailTemplateName;
 import com.xvn.book.role.RoleRepository;
 import com.xvn.book.user.Token;
 import com.xvn.book.user.TokenRepository;
 import com.xvn.book.user.User;
 import com.xvn.book.user.UserRepository;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +31,10 @@ public class AuthenticationService {
 
     private final EmailService emailService;
 
-    public void register(RegistrationReq request) {
+    @Value("${application.mailing.frontend.activation-url}")
+    private String activationUrl;
+
+    public void register(RegistrationReq request) throws MessagingException {
         var userRole = roleRepository.findByName("USER")
                 .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
         var user = User.builder()
@@ -44,9 +50,17 @@ public class AuthenticationService {
         sendValidationEmail(user);
     }
 
-    private void sendValidationEmail(User user) {
+    private void sendValidationEmail(User user) throws MessagingException {
         var newToken = generateAndSaveActivationToken(user);
         // send email
+        emailService.sendEmail(
+                user.getEmail(),
+                user.fullName(),
+                EmailTemplateName.ACTIVATE_ACCOUNT,
+                activationUrl,
+                newToken,
+                "Activate Account"
+        );
     }
 
     private String generateAndSaveActivationToken(User user) {

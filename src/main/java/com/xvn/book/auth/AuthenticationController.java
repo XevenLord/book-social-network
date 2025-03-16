@@ -1,6 +1,7 @@
 package com.xvn.book.auth;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,7 @@ public class AuthenticationController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public ResponseEntity<?> register(@RequestBody @Valid RegistrationReq request) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegistrationReq request) throws MessagingException {
         service.register(request);
         return ResponseEntity.accepted().build();
     }
