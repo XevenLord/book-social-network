@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentication")
 public class AuthenticationController {
@@ -23,6 +23,16 @@ public class AuthenticationController {
     public ResponseEntity<?> register(@RequestBody @Valid RegistrationReq request) throws MessagingException {
         service.register(request);
         return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/authenticate")
+    public ResponseEntity<AuthenticationRsp> authenticate(@RequestBody @Valid AuthenticationReq req) {
+        return ResponseEntity.ok(service.authenticate(req));
+    }
+
+    @GetMapping("/activate-account")
+    public void confirm(@RequestParam String token) {
+        service.activateAccount(token);
     }
 
 }
