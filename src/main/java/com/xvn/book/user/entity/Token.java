@@ -1,4 +1,4 @@
-package com.xvn.book.user;
+package com.xvn.book.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

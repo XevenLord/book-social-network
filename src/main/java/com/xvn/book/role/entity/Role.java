@@ -1,7 +1,7 @@
-package com.xvn.book.role;
+package com.xvn.book.role.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.xvn.book.user.User;
+import com.xvn.book.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

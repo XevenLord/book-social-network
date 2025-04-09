@@ -1,6 +1,6 @@
 package com.xvn.book.security;
 
-import com.xvn.book.user.UserRepository;
+import com.xvn.book.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

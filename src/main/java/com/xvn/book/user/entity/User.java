@@ -1,11 +1,10 @@
-package com.xvn.book.user;
+package com.xvn.book.user.entity;
 
-import com.xvn.book.role.Role;
+import com.xvn.book.book.entity.Book;
+import com.xvn.book.book.entity.BookTxnHis;
+import com.xvn.book.role.entity.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -41,8 +40,17 @@ public class User implements UserDetails, Principal {
     private boolean accountLocked;
     private boolean enabled;
 
+    @ToString.Exclude
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Role> roles;
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "owner")
+    private List<Book> books;
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "user")
+    private List<BookTxnHis> histories;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

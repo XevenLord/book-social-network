@@ -5,8 +5,6 @@ spring:
     password: Gx@YJ0505
     driver-class-name: org.postgresql.Driver
   jpa:
-    hibernate:
-      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -43,3 +41,6 @@ application:
   mailing:
     frontend:
       activation-url: http://localhost:4200/activate-account
+  file:
+    upload:
+      photos-output-path: ./uploads

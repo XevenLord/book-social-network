@@ -1,5 +1,6 @@
-package com.xvn.book.role;
+package com.xvn.book.role.repository;
 
+import com.xvn.book.role.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

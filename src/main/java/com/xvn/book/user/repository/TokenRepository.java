@@ -1,5 +1,6 @@
-package com.xvn.book.user;
+package com.xvn.book.user.repository;
 
+import com.xvn.book.user.entity.Token;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

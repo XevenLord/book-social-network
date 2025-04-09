@@ -1,19 +1,22 @@
-package com.xvn.book.auth;
+package com.xvn.book.auth.service;
 
 import com.xvn.book.email.EmailService;
 import com.xvn.book.email.EmailTemplateName;
-import com.xvn.book.role.RoleRepository;
-import com.xvn.book.security.JwtSrv;
-import com.xvn.book.user.Token;
-import com.xvn.book.user.TokenRepository;
-import com.xvn.book.user.User;
-import com.xvn.book.user.UserRepository;
+import com.xvn.book.role.repository.RoleRepository;
+import com.xvn.book.user.entity.Token;
+import com.xvn.book.user.repository.TokenRepository;
+import com.xvn.book.user.entity.User;
+import com.xvn.book.user.repository.UserRepository;
+import com.xvn.common.core.dto.auth.req.AuthReqDto;
+import com.xvn.common.core.dto.auth.rsp.AuthRspDto;
+import com.xvn.common.core.dto.auth.req.RegReqDto;
+import com.xvn.common.core.service.JwtSrv;
 import jakarta.mail.MessagingException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +27,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationService {
+public class AuthSrv {
 
     private final RoleRepository roleRepository;
 
@@ -43,7 +46,7 @@ public class AuthenticationService {
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl;
 
-    public void register(RegistrationReq request) throws MessagingException {
+    public void register(RegReqDto request) throws MessagingException {
         var userRole = roleRepository.findByName("USER")
                 .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
         var user = User.builder()
@@ -96,7 +99,7 @@ public class AuthenticationService {
         return codeBuilder.toString();
     }
 
-    public AuthenticationRsp authenticate(AuthenticationReq req) {
+    public AuthRspDto authenticate(AuthReqDto req) {
         var auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         req.getEmail(),
@@ -107,12 +110,23 @@ public class AuthenticationService {
         var user = ((User) auth.getPrincipal());
         claims.put("fullName", user.fullName());
         var jwtToken = jwtSrv.generateToken(claims, user);
-        return AuthenticationRsp.builder()
+        return AuthRspDto.builder()
                 .token(jwtToken)
                 .build();
     }
 
-    @Transactional
-    public void activateAccount(String token) {
+    public void activateAccount(String token) throws MessagingException {
+        Token savedToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        if (LocalDateTime.now().isAfter(savedToken.getExpiresAt())) {
+            sendValidationEmail(savedToken.getUser());
+            throw new RuntimeException("Activation token has expired. A new token has been sent to the same email address.");
+        }
+        var user = userRepository.findById(savedToken.getUser().getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        user.setEnabled(true);
+        userRepository.save(user);
+        savedToken.setValidatedAt(LocalDateTime.now());
+        tokenRepository.save(savedToken);
     }
 }
