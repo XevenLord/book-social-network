@@ -5,12 +5,14 @@ import com.xvn.book.book.mapper.BookMapper;
 import com.xvn.book.book.repository.BookRepository;
 import com.xvn.book.book.repository.BookTxnHisRepository;
 import com.xvn.book.book.entity.BookTxnHis;
+import com.xvn.book.kafka.KafkaEventProducer;
 import com.xvn.book.user.entity.User;
 import com.xvn.common.core.dto.PageDto;
 import com.xvn.common.core.dto.book.req.BookReq;
 import com.xvn.common.core.dto.book.rsp.BookRsp;
 import com.xvn.common.core.dto.book.rsp.BorrowedBookRsp;
 import com.xvn.common.core.enums.SysCodeEnum;
+import com.xvn.common.core.event.BookBorrowedEvent;
 import com.xvn.common.core.exception.ApiException;
 import com.xvn.common.core.service.FileStorageSrv;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,6 +26,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.xvn.book.common.specification.BookSpec.withOwnerId;
@@ -40,6 +43,8 @@ public class BookSrv {
     private final BookMapper bookMapper;
 
     private final FileStorageSrv fileStorageSrv;
+
+    private final KafkaEventProducer kafkaEventProducer;
 
     public Integer save(BookReq req, Authentication connectedUser) {
         User user = (User) connectedUser.getPrincipal();
@@ -175,7 +180,18 @@ public class BookSrv {
                 .returned(false)
                 .returnApproved(false)
                 .build();
-        return bookTxnHisRepository.save(bookTxn).getId();
+        Integer transactionId = bookTxnHisRepository.save(bookTxn).getId();
+        kafkaEventProducer.publishBookBorrowed(new BookBorrowedEvent(
+                transactionId,
+                book.getId(),
+                book.getTitle(),
+                user.getId(),
+                user.getEmail(),
+                book.getOwner().getId(),
+                book.getOwner().getEmail(),
+                LocalDateTime.now()
+        ));
+        return transactionId;
     }
 
     public Integer returnBorrowBook(Integer bookId, Authentication connectedUser) {

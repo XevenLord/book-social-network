@@ -2,11 +2,13 @@ package com.xvn.book.auth.service;
 
 import com.xvn.book.email.EmailService;
 import com.xvn.book.email.EmailTemplateName;
+import com.xvn.book.kafka.KafkaEventProducer;
 import com.xvn.book.role.repository.RoleRepository;
 import com.xvn.book.user.entity.Token;
 import com.xvn.book.user.repository.TokenRepository;
 import com.xvn.book.user.entity.User;
 import com.xvn.book.user.repository.UserRepository;
+import com.xvn.common.core.event.UserRegisteredEvent;
 import com.xvn.common.core.dto.auth.req.AuthReqDto;
 import com.xvn.common.core.dto.auth.rsp.AuthRspDto;
 import com.xvn.common.core.dto.auth.req.RegReqDto;
@@ -39,6 +41,8 @@ public class AuthSrv {
 
     private final EmailService emailService;
 
+    private final KafkaEventProducer kafkaEventProducer;
+
     private final AuthenticationManager authenticationManager;
 
     private final JwtSrv jwtSrv;
@@ -46,7 +50,7 @@ public class AuthSrv {
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl;
 
-    public void register(RegReqDto request) throws MessagingException {
+    public void register(RegReqDto request) {
         var userRole = roleRepository.findByName("USER")
                 .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
         var user = User.builder()
@@ -55,11 +59,18 @@ public class AuthSrv {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .accountLocked(false)
-                .enabled(true)
+                .enabled(false)
                 .roles(List.of(userRole))
                 .build();
         userRepository.save(user);
-        sendValidationEmail(user);
+        var activationToken = generateAndSaveActivationToken(user);
+        kafkaEventProducer.publishUserRegistered(new UserRegisteredEvent(
+                user.getId(),
+                user.getEmail(),
+                user.fullName(),
+                activationToken,
+                LocalDateTime.now()
+        ));
     }
 
     private void sendValidationEmail(User user) throws MessagingException {

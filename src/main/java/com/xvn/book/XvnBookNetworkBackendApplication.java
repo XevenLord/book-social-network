@@ -9,8 +9,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.kafka.annotation.EnableKafka;
 
-@SpringBootApplication(scanBasePackages = {"com.xvn", "com.xvn.common"})
+@SpringBootApplication(scanBasePackages = { "com.xvn", "com.xvn.common" })
+@EnableKafka
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
 @EnableAspectJAutoProxy(exposeProxy = true)
 @EnableAsync
